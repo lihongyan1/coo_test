@@ -1,0 +1,7 @@
+kind: ImageSetConfiguration
+apiVersion: mirror.openshift.io/v2alpha1
+mirror:
+  operators:
+  - catalog: quay.io/redhat-user-workloads/cluster-observabilit-tenant/coo-fbc-v4-17@sha256:a21aa2b02309f87fb53a7cddf9504c419c8f6f15bb1436d3b51d3ce60b517bdb
+    packages:
+    - name: cluster-observability-operator
