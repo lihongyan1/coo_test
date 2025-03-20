@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: e2e-tests
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  labels:
+    mso: example
+  name: multi-ns
+  namespace: e2e-tests
+spec:
+  createClusterRoleBindings: NoClusterRoleBindings
+  alertmanagerConfig:
+    disabled: false
+  logLevel: info
+  namespaceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: multi-ns
+  prometheusConfig:
+    replicas: 2
+  resourceSelector:
+    matchLabels:
+      app: demo
+      monitoring.rhobs/stack: multi-ns
+  resources: {}
+  retention: 120h
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: e2e-tests1
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  labels:
+    mso: example
+  name: multi-ns
+  namespace: e2e-tests1
+spec:
+  createClusterRoleBindings: CreateClusterRoleBindings
+  alertmanagerConfig:
+    disabled: false
+  logLevel: info
+  namespaceSelector:
+    matchLabels:
+      monitoring.rhobs/stack: multi-ns
+  prometheusConfig:
+    replicas: 2
+  resourceSelector:
+    matchLabels:
+      app: demo
+      monitoring.rhobs/stack: multi-ns
+  resources: {}
+  retention: 120h
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ns1
+  labels:
+    monitoring.rhobs/stack: multi-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus-example-app
+  name: prometheus-example-app
+  namespace: ns1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-example-app
+  template:
+    metadata:
+      labels:
+        app: prometheus-example-app
+    spec:
+      containers:
+      - image: ghcr.io/rhobs/prometheus-example-app:0.4.2
+        imagePullPolicy: IfNotPresent
+        name: prometheus-example-app
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus-example-app
+  name: prometheus-example-app
+  namespace: ns1
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+    name: web
+  selector:
+    app: prometheus-example-app
+  type: ClusterIP
+---
+apiVersion: monitoring.rhobs/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-example-monitor
+  namespace: ns1 
+  labels:
+    app: demo
+    monitoring.rhobs/stack: multi-ns
+spec:
+  endpoints:
+  - interval: 30s
+    port: web 
+    scheme: http
+  selector: 
+    matchLabels:
+      app: prometheus-example-app
+
+oc get clusterrolebindings -o json | jq -r '.items[] | select(.subjects[]? | select(.kind=="ServiceAccount" and .name=="multi-ns-prometheus" and .namespace=="e2e-tests")) | .metadata.name'
+oc -n openshift-monitoring exec sts/prometheus-k8s -- curl -k 'http://multi-ns-prometheus.e2e-tests.svc:9090/api/v1/query?' --data-urlencode 'query=version{pod=~"prometheus-example-app.*",namespace="ns1"}' | jq
