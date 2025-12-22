@@ -1,0 +1,59 @@
+apiVersion: monitoring.rhobs/v1alpha1
+kind: MonitoringStack
+metadata:
+  name: comprehensive-stack
+  namespace: integration-test-all
+  labels:
+    test-suite: pr-941-950
+spec:
+  # PR #946: Size-based retention
+  retention: 7d
+  retentionSize: 5GB
+
+  logLevel: debug
+
+  resourceSelector:
+    matchLabels:
+      monitoring: comprehensive
+
+  # PR #941: Alertmanager replicas
+  alertmanagerConfig:
+    replicas: 2  # Should create PDB
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+  prometheusConfig:
+    # PR #950: Scheme configuration (tested via ServiceMonitors)
+    replicas: 2
+
+    # PR #943: OTLP receiver
+    enableOtlpHttpReceiver: true
+
+    # PR #945: Remote write with secret (will test secret updates)
+    remoteWrite:
+    - url: http://mock-remote-prometheus:9090/api/v1/write
+      bearerTokenSecret:
+        name: remote-write-token
+        key: token
+
+    # PR #946: Retention with PVC
+    persistentVolumeClaim:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 2Gi
+        cpu: 1000m

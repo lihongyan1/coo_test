@@ -37,29 +37,17 @@ spec:
       app.kubernetes.io/name: prometheus-example-app
   podMetricsEndpoints:
   - port: web
-    relabelings:
-    # ============================================
-    # Invalid relabel configurations that pass validation but cause runtime errors
-    # ============================================ 
-    # Error: Invalid regex pattern (unclosed bracket - will cause Prometheus error)
-    # This passes validation but will fail at runtime when Prometheus tries to parse
-    - action: replace
-      regex: '[unclosed-bracket'
-      sourceLabels:
-      - __meta_kubernetes_pod_name
-      targetLabel: broken_regex_label
-      replacement: $1
 ---
 apiVersion: monitoring.rhobs/v1alpha1
 kind: MonitoringStack
 metadata:
   labels:
     mso: example
-  name: multi-ns
+  name: podmonitor-test
   namespace: ns1
 spec:
   alertmanagerConfig:
-    disabled: true
+    disabled: false
   logLevel: info
   namespaceSelector:
     matchLabels:
@@ -71,4 +59,14 @@ spec:
       app.kubernetes.io/name: prometheus-example-app
   resources: {}
   retention: 120h
+---
+apiVersion: monitoring.rhobs/v1alpha1
+kind: ThanosQuerier
+metadata:
+  name: example-thanos
+  namespace: ns1
+spec:
+  selector:
+    matchLabels:
+      mso: example
 EOF

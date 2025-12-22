@@ -1,4 +1,5 @@
 ssh -i ~/.ssh/openshift-qe.pem cloud-user@10.0.98.224
+oc login --web https://api.stone-prd-rh01.pg1f.p1.openshiftapps.com:6443/
 
 oc  get csv cluster-observability-operator.v1.2.2 -ojson | jq -r '.spec.relatedImages' | grep image | awk -F/ '{print $3}' |tr -d , | sed 's/"$//' | sort > csv.images
 
@@ -15,8 +16,10 @@ oc get component -ojson | jq -r '.items[] | select(.spec.application|test("^coo-
 oc get component -ojson | jq -r '.items[] | select(.spec.application|test("^coo-fbc"))' | jq -r '.status.lastPromotedImage'>fbc-images
 scp -i ~/.ssh/openshift-qe.pem ./fbc-images cloud-user@10.0.98.224:~/coo/coo_test/fbc-images
 
-for release in $(oc get release --sort-by=.metadata.creationTimestamp | grep -i succeed | awk '{print $1}' | grep coo-fbc); do echo $release; oc describe release $release|grep -i index_image_resolved |awk '{print $2}'; done
+for release in $(oc get release --sort-by=.metadata.creationTimestamp | grep -i succeed | awk '{print $1}' | grep coo-fbc); do echo $release; oc describe release $release|grep -i -m 1 index_image_resolved |awk '{print $2}'; done
 
 oc get deployment -n openshift-cluster-observability-operator -o yaml | grep -o "registry.redhat.io/cluster-observability-operator/.*" | sort | uniq |sed 's/registry.redhat.io/registry.stage.redhat.io/' | awk -F/ '{print $3}' > deployment.image
 
 for pod in $(oc get pod --no-headers | awk '{print $1}'); do echo $pod; oc logs $pod |tail -n 20 ;done
+
+for image in `cat fbc-images`; do  echo $image; opm alpha list bundles $image  cluster-observability-operator;done
