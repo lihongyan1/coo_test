@@ -70,3 +70,16 @@ spec:
     matchLabels:
       mso: example
 EOF
+
+echo "Waiting for prometheus-example-app deployment to be ready..."
+oc wait -n ns1 --for=condition=Available deploy/prometheus-example-app --timeout=300s
+
+echo "Waiting for thanos-querier deployment to be ready..."
+oc wait -n ns1 --for=condition=Available deploy/thanos-querier-example-thanos --timeout=300s
+
+echo "Waiting for thanos-querier pod to be running..."
+oc wait -n ns1 --for=condition=Ready pod -l app.kubernetes.io/name=thanos-querier --timeout=300s
+
+echo "Executing curl command on thanos-querier..."
+oc -n ns1 exec deploy/thanos-querier-example-thanos -- curl -k 'http://thanos-querier-example-thanos.ns1.svc:10902/api/v1/query?' --data-urlencode 'query=version' | jq
+

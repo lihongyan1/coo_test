@@ -1,9 +1,16 @@
 #!/bin/bash
 set -eux
+
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/install_utils.sh"
+
 oc apply -f - <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
+  labels:
+    openshift.io/cluster-monitoring: "true"
   name: openshift-cluster-observability-operator
 ---
 apiVersion: operators.coreos.com/v1
@@ -30,3 +37,5 @@ spec:
   sourceNamespace: openshift-marketplace
 EOF
 
+# Wait for operator to be ready
+wait_for_operator "openshift-cluster-observability-operator"

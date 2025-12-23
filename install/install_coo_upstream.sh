@@ -1,8 +1,10 @@
 #!/bin/bash
 set -eux
-#IIB=brew.registry.redhat.io/rh-osbs/iib-pub-pending:v4.17
-#IIB=brew.registry.redhat.io/rh-osbs/iib:836889
-#IIB=registry.redhat.io/redhat/redhat-operator-index:v4.18
+
+# Source common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/install_utils.sh"
+
 IIB=quay.io/rhobs/observability-operator-catalog:latest
 cat <<EOF |oc create -f -
 apiVersion: operators.coreos.com/v1alpha1
@@ -18,19 +20,26 @@ spec:
     registryPoll:
       interval: 10m0s
 EOF
+# Wait for CatalogSource to be ready before installing operator
+wait_for_catalogsource "coo" "openshift-marketplace"
+
+echo "Installing operator..."
+
 oc apply -f - <<EOF
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: observability-operator
+  labels:
+    openshift.io/cluster-monitoring: "true"
+  name: openshift-cluster-observability-operator
 ---
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
-  namespace: observability-operator
+  namespace: openshift-cluster-observability-operator
   name: og-global
   labels:
-    og_label: observability-operator
+    og_label: openshift-cluster-observability-operator
 spec:
 EOF
 oc apply -f - <<EOF
@@ -41,12 +50,13 @@ metadata:
   labels:
     operators.coreos.com/observability-operator.openshift-operators: ""
   name: observability-operator
-  namespace: observability-operator
+  namespace: openshift-cluster-observability-operator
 spec:
-  channel: development
+  channel: stable
   installPlanApproval: Automatic
   name: observability-operator
   source: coo
   sourceNamespace: openshift-marketplace
 EOF
-
+# Wait for operator to be ready
+wait_for_operator "openshift-cluster-observability-operator"
