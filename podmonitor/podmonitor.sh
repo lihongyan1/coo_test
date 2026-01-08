@@ -81,5 +81,7 @@ echo "Waiting for thanos-querier pod to be running..."
 oc wait -n ns1 --for=condition=Ready pod -l app.kubernetes.io/name=thanos-querier --timeout=300s
 
 echo "Executing curl command on thanos-querier..."
+oc -n ns1 exec deploy/thanos-querier-example-thanos -- curl -k 'http://thanos-querier-example-thanos.ns1.svc:10902/api/v1/query?' --data-urlencode 'query=prometheus_build_info' | jq
 oc -n ns1 exec deploy/thanos-querier-example-thanos -- curl -k 'http://thanos-querier-example-thanos.ns1.svc:10902/api/v1/query?' --data-urlencode 'query=version' | jq
+
 
