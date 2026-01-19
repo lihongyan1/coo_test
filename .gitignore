@@ -22,4 +22,4 @@ go.work
 
 # Authentication files
 .auth
-.claude
+
