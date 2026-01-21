@@ -1,3 +1,7 @@
+# Apply COO1.2.1/1.3.1, pre-upgrade to COO 1.4
+# creates dashboards (v1alpha1) and permissions
+# continue work in COO1.4.0
+
 oc create ns perses-dev
 
 oc apply -f https://raw.githubusercontent.com/observability-ui/development-tools/refs/heads/main/perses/rbac/coo121/dashboards/openshift-cluster-sample-dashboard.yaml
@@ -1159,30 +1163,4 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: persesdatasource-viewer-role
-EOF
----
-apiVersion: observability.openshift.io/v1alpha1
-kind: UIPlugin
-metadata:
-  name: monitoring
-spec:
-  type: Monitoring
-  monitoring:
-    acm:
-      enabled: true
-      alertmanager:
-        url: 'https://alertmanager.open-cluster-management-observability.svc:9095'
-      thanosQuerier:
-        url: 'https://rbac-query-proxy.open-cluster-management-observability.svc:8443'
-    perses:
-      enabled: true
-    incidents:
-      enabled: true
----
-apiVersion: observability.openshift.io/v1alpha1
-kind: UIPlugin
-metadata:
-  name: troubleshooting-panel
-spec:
-  type: TroubleshootingPanel
 EOF

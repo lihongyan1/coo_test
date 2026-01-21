@@ -1,3 +1,5 @@
+# Apply post upgrade to coo1.4
+# extra Cluster Roles granted to users
 oc apply -f - <<EOF
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

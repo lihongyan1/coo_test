@@ -1,3 +1,6 @@
+# Apply COO 1.4.0 fresh Install and new user
+# creates dashboards (v1alpha2 with different yaml structure from v1alpha1), 
+# Same permissions from COO 1.2.1 that will continue work in COO1.4.0, + extra ClusterRolesBindings
 #!/bin/bash
 oc new-project perses-dev
 
